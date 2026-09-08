@@ -4,7 +4,7 @@
     "ios": "expo start --ios",
     "android": "expo start --android",
     "web": "expo start --web",
-    "test": "node scripts/validate-data.mjs",
+    "test": "node scripts/validate-data.mjs && node scripts/validate-english-content.mjs",
     "build:word-books": "node scripts/generate-word-books.mjs",
     "build:web": "expo export --platform web --output-dir dist && node scripts/fix-gh-pages-paths.mjs",
     "build:android:preview": "npx eas-cli build --platform android --profile preview",
@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
-    "expo": "~54.0.25",
+    "@types/react": "~19.1.10",
+    "expo": "~54.0.37",
     "expo-camera": "~17.0.10",
     "expo-image-manipulator": "~14.0.8",
     "expo-image-picker": "~17.0.11",
@@ -29,11 +30,13 @@
     "react-native": "0.81.5",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-view-shot": "4.0.3",
-    "react-native-web": "^0.21.0"
+    "react-native-web": "^0.21.0",
+    "typescript": "~5.9.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
-    "docx": "^9.7.1"
+    "docx": "^9.7.1",
+    "playwright": "^1.61.0"
   },
   "private": true
 }

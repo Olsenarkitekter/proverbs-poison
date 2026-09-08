@@ -1,0 +1,15 @@
+.git/
+node_modules/
+dist/
+.expo/
+.vercel/
+backups/
+docs/
+launch/
+outputs/
+store/
+supabase/
+swiftui-supabase/
+webshop/
+*.log
+.DS_Store

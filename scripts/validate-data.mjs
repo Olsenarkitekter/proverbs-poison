@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import bookStoriesEn from '../src/bookStoriesEn.js';
 
 const source = readFileSync('src/proverbs.js', 'utf8');
 const rawMatch = source.match(/const rawProverbs = (\[[\s\S]*?\n\]);/);
@@ -48,7 +49,7 @@ const categoryKeys = categories.map((item) => item.key);
 for (const removed of ['wisdom', 'weather', 'sea']) {
   if (categoryKeys.includes(removed)) throw new Error(`Removed category still present: ${removed}`);
 }
-for (const category of ['all', 'time', 'work-results', 'truth', 'relations', 'risk', 'images-humour', 'origin-stories', 'experience']) {
+for (const category of ['all', 'beginning', 'choosing', 'failing', 'relating', 'understanding']) {
   if (!categoryKeys.includes(category)) throw new Error(`Missing category: ${category}`);
 }
 
@@ -56,6 +57,37 @@ const activeProverbs = rawProverbs
   .filter((item) => bookMetaById[item.id] && !removedDuplicateMeaningIds.has(item.id));
 const activeIds = new Set(activeProverbs.map((item) => item.id));
 if (activeProverbs.length < 70) throw new Error(`Expected at least 70 curated meanings after duplicate pruning, got ${activeProverbs.length}`);
+
+const activeStoryIds = new Set(Object.keys(bookStoriesEn));
+if (activeStoryIds.size !== activeProverbs.length) {
+  throw new Error(`Expected ${activeProverbs.length} English book stories, got ${activeStoryIds.size}`);
+}
+
+const normalizedStorySentences = new Map();
+for (const proverb of activeProverbs) {
+  const story = bookStoriesEn[proverb.id];
+  if (!story) throw new Error(`Missing English book story for ${proverb.id}`);
+  if (story.length < 500) throw new Error(`English book story is too short for ${proverb.id}: ${story.length}`);
+  if (story.split('\n\n').length !== 3) throw new Error(`English book story must have three sections for ${proverb.id}`);
+
+  const sentences = story
+    .replaceAll(/\s+/g, ' ')
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => sentence.trim().toLowerCase())
+    .filter(Boolean);
+  for (const sentence of sentences) {
+    normalizedStorySentences.set(sentence, (normalizedStorySentences.get(sentence) || 0) + 1);
+  }
+}
+
+for (const storyId of activeStoryIds) {
+  if (!activeIds.has(storyId)) throw new Error(`English book story references inactive proverb: ${storyId}`);
+}
+
+const overusedStorySentences = [...normalizedStorySentences.entries()].filter(([, count]) => count > 2);
+if (overusedStorySentences.length) {
+  throw new Error(`English book story sentence is used more than twice: ${JSON.stringify(overusedStorySentences.slice(0, 3))}`);
+}
 for (const removedId of removedDuplicateMeaningIds) {
   const replacementId = duplicateMeaningReplacements[removedId];
   if (!bookMetaById[removedId]) throw new Error(`Duplicate removal references unknown id: ${removedId}`);

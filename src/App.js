@@ -103,9 +103,9 @@ const SHARE_FONTS = [
   { key: 'script', label: 'Script', family: Platform.select({ web: '"Brush Script MT", "Snell Roundhand", cursive', ios: 'SnellRoundhand', android: 'casual', default: 'serif' }) }
 ];
 const SHARE_TEXT_SIZES = [
-  { key: 'small', label: 'Lille', base: 32, min: 25, lineRatio: 1.16, exportBase: 60, exportMin: 46, exportLineRatio: 1.18 },
-  { key: 'medium', label: 'Mellem', base: 42, min: 29, lineRatio: 1.14, exportBase: 76, exportMin: 52, exportLineRatio: 1.18 },
-  { key: 'large', label: 'Stor', base: 54, min: 32, lineRatio: 1.08, exportBase: 96, exportMin: 54, exportLineRatio: 1.1 }
+  { key: 'small', label: 'Lille', base: 25, min: 20, lineRatio: 1.2, exportBase: 46, exportMin: 36, exportLineRatio: 1.22 },
+  { key: 'medium', label: 'Mellem', base: 32, min: 23, lineRatio: 1.18, exportBase: 58, exportMin: 42, exportLineRatio: 1.22 },
+  { key: 'large', label: 'Stor', base: 42, min: 27, lineRatio: 1.14, exportBase: 76, exportMin: 48, exportLineRatio: 1.16 }
 ];
 
 function getTextLengthScale(text) {
@@ -576,12 +576,9 @@ export default function App() {
   const copy = currentEdit ? { ...selectedVariant, saying: currentEdit } : selectedVariant;
   const currentCategory = categories.find((item) => item.key === displayedProverb.category);
   const englishCopy = getProverbVariant(displayedProverb, 'en');
-  const meaningText = englishCopy.explanation || copy.explanation;
-  const rawOrigin = englishCopy.origin || copy.origin || '';
-  const primaryOrigin = /^origin unknown\b/i.test(rawOrigin.trim()) ? null : rawOrigin;
-  const englishSayingText = englishCopy.saying ? `English: ${englishCopy.saying}` : null;
-  const meaningLine = meaningText ? `Meaning: ${meaningText}` : null;
-  const detailText = [primaryOrigin, meaningLine, englishSayingText].filter(Boolean).join('\n\n');
+  const summaryText = copy.explanation || englishCopy.explanation;
+  const rawOrigin = displayedProverb.appOriginEn || englishCopy.origin || copy.origin || '';
+  const detailText = rawOrigin || 'No story has been added for this saying yet.';
   const hasLongDetails = detailText.length > 92;
   const shouldShowReadMore = hasLongDetails || detailLineCount > 2;
   const infoText = detailText;
@@ -1474,6 +1471,11 @@ export default function App() {
                 </View>
               </View>
             )}
+            {!editOpen && summaryText ? (
+              <View style={styles.summaryPanel}>
+                <Text style={styles.summaryText} numberOfLines={4}>{summaryText}</Text>
+              </View>
+            ) : null}
             {!editOpen && imageEditorOpen && (
               <View style={styles.imageEditorPanel}>
                 <ScrollView showsVerticalScrollIndicator contentContainerStyle={styles.imageEditorScrollContent}>
@@ -1580,9 +1582,6 @@ export default function App() {
             </View>
           )}
           <View style={styles.actionBar}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Edit proverb" onPress={() => { setCameraPreviewOpen(false); setEditOpen(true); }} style={styles.bottomIconButton}>
-              <ActionIcon name="edit-3" />
-            </Pressable>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Choose share style"
@@ -1598,9 +1597,6 @@ export default function App() {
               style={[styles.bottomIconButton, styles.cameraButton, cameraPreviewOpen && styles.armedCameraButton]}
             >
               <CameraIcon active={cameraPreviewOpen} />
-            </Pressable>
-            <Pressable accessibilityLabel="Show saved proverbs" onPress={openSavedList} style={styles.bottomIconButton}>
-              <ActionIcon name="list" />
             </Pressable>
             <Pressable accessibilityRole="button" accessibilityLabel="Send proverb" onPress={() => { setCameraPreviewOpen(false); setShareOpen((value) => !value); }} style={styles.bottomIconButton}>
               <ActionIcon name="send" />
@@ -1632,7 +1628,13 @@ export default function App() {
                   <ActionIcon name="x" size={24} />
                 </Pressable>
               </View>
-              <ScrollView contentContainerStyle={styles.infoScrollContent} showsVerticalScrollIndicator>
+              <ScrollView
+                style={styles.infoScroll}
+                contentContainerStyle={styles.infoScrollContent}
+                showsVerticalScrollIndicator
+                persistentScrollbar
+                nestedScrollEnabled
+              >
                 <Text style={styles.explanation}>{infoText}</Text>
               </ScrollView>
             </View>
@@ -1877,8 +1879,10 @@ const styles = StyleSheet.create({
   searchResultMeaning: { color: '#8f8f8f', fontSize: 13, lineHeight: 18, marginTop: 2 },
   searchEmpty: { color: '#8f8f8f', fontSize: 14, fontWeight: '800', textAlign: 'center', paddingVertical: 18 },
   content: { flex: 1, justifyContent: 'flex-start', paddingBottom: 8 },
-  cardShell: { flex: 1, position: 'relative', justifyContent: 'flex-start' },
-  shareCard: { width: '100%', aspectRatio: 1, flexGrow: 0, marginTop: 112, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.42)', backgroundColor: '#000000', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  cardShell: { flex: 1, position: 'relative', justifyContent: 'flex-start', paddingBottom: 6 },
+  summaryPanel: { minHeight: 88, marginTop: 10, marginBottom: 2, justifyContent: 'center', paddingHorizontal: 18 },
+  summaryText: { color: '#d7d7d7', fontSize: 16, lineHeight: 22, fontWeight: '400', textAlign: 'center' },
+  shareCard: { width: '92%', maxWidth: 520, aspectRatio: 1, flexGrow: 0, alignSelf: 'center', marginTop: 0, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.42)', backgroundColor: '#000000', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   shareCardCamera: { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center' },
   cameraPreviewFill: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
   cameraPreviewOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
@@ -1886,7 +1890,7 @@ const styles = StyleSheet.create({
   shareCardImage: {},
   shareCardOverlay: { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34, paddingVertical: 38, backgroundColor: 'rgba(0, 0, 0, 0.42)' },
   shareCardTextBox: { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 34, paddingVertical: 38 },
-  cardFooter: { marginTop: 8, alignItems: 'stretch', gap: 8, paddingHorizontal: 0 },
+  cardFooter: { marginTop: 6, alignItems: 'stretch', gap: 5, paddingHorizontal: 0 },
   cardMetaRow: { maxWidth: '100%', flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 5 },
   cardMetaText: { width: '100%', color: '#8f8f8f', fontSize: 10, lineHeight: 13, fontWeight: '900', textAlign: 'center', textTransform: 'uppercase' },
   cardMetaDot: { color: '#777777', fontSize: 13, lineHeight: 16, fontWeight: '900' },
@@ -1894,10 +1898,10 @@ const styles = StyleSheet.create({
   originLine: { marginTop: 22, color: '#8f8f8f', fontSize: 13, lineHeight: 18, textAlign: 'center', fontWeight: '700', paddingHorizontal: 8 },
   cardReadMoreButton: { alignSelf: 'center', marginTop: 8 },
   cardNavControlRow: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
-  navArrowButton: { width: 34, height: 40, alignItems: 'center', justifyContent: 'center' },
-  navArrowText: { color: '#ffffff', fontSize: 34, lineHeight: 36, fontWeight: '300', opacity: 0.9 },
+  navArrowButton: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center' },
+  navArrowText: { color: '#ffffff', fontSize: 32, lineHeight: 34, fontWeight: '300', opacity: 0.9 },
   cardControlRow: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
-  inlineInfoButton: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.55)', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
+  inlineInfoButton: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.55)', alignItems: 'center', justifyContent: 'center', backgroundColor: 'transparent' },
   activeInlineIconButton: { borderColor: '#ffd166', backgroundColor: 'transparent' },
   inlineInfoText: { color: '#ffffff', fontSize: 15, lineHeight: 18, fontWeight: '900', fontStyle: 'italic' },
   exportCard: { position: 'absolute', left: -1200, top: 0, width: 1080, height: 1080, overflow: 'hidden' },
@@ -1911,12 +1915,13 @@ const styles = StyleSheet.create({
   exportTagline: { color: '#ffffff', fontSize: 14, lineHeight: 17, fontWeight: '700', opacity: 0.82 },
   activeIconButton: { borderColor: '#ffffff' },
   infoOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 20, backgroundColor: 'rgba(0, 0, 0, 0.82)', paddingHorizontal: 18, paddingTop: 92, paddingBottom: 116, justifyContent: 'center' },
-  infoPanel: { maxHeight: '78%', borderWidth: 1, borderColor: '#242424', borderRadius: 24, backgroundColor: '#050505', padding: 18 },
+  infoPanel: { flex: 1, maxHeight: '100%', borderWidth: 1, borderColor: '#242424', borderRadius: 24, backgroundColor: '#050505', padding: 18 },
   infoHeader: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14, marginBottom: 10 },
   infoTitle: { flex: 1, color: '#ffffff', fontSize: 20, lineHeight: 26, fontWeight: '900' },
   infoClose: { color: '#ffffff', fontSize: 34, lineHeight: 36, fontWeight: '300' },
-  infoScrollContent: { paddingBottom: 12 },
-  explanation: { fontSize: 18, lineHeight: 28, textAlign: 'left', color: '#d9d9d9' },
+  infoScroll: { flex: 1 },
+  infoScrollContent: { flexGrow: 1, paddingBottom: 24 },
+  explanation: { fontSize: 18, lineHeight: 28, textAlign: 'left', color: '#d9d9d9', fontWeight: '400' },
   readMoreText: { color: '#ffffff', fontSize: 13, lineHeight: 18, fontWeight: '900', textAlign: 'center' },
   editPanelTop: { marginBottom: 12, borderWidth: 1, borderColor: '#242424', borderRadius: 18, padding: 12, backgroundColor: '#080808', zIndex: 12 },
   editPanel: { marginTop: 18, borderWidth: 1, borderColor: '#242424', borderRadius: 18, padding: 14, backgroundColor: '#080808' },
@@ -1932,7 +1937,7 @@ const styles = StyleSheet.create({
   activeCameraFacingButton: { borderColor: '#ffffff', backgroundColor: '#ffffff' },
   cameraFacingText: { color: '#8f8f8f', fontSize: 12, lineHeight: 15, fontWeight: '800' },
   activeCameraFacingText: { color: '#000000' },
-  actionBar: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 0, width: '100%' },
+  actionBar: { minHeight: 52, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 44, marginBottom: 0, width: '100%' },
   bottomIconButton: { width: 48, height: 48, borderRadius: 24, borderWidth: 1.5, borderColor: '#777777', alignItems: 'center', justifyContent: 'center' },
   cameraButton: { borderColor: '#ffffff' },
   armedCameraButton: { borderColor: '#ffffff', backgroundColor: '#ffffff' },

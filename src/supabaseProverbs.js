@@ -1,9 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getProverbVariant, languages, proverbs as localProverbs } from './proverbs';
+import { englishCorrectionsById } from './englishCorrections';
 
 const SUPABASE_URL = 'https://tgndxvfmkolmibtoeuti.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_gkpLsDT2NuNziAV8WWGgJw_GgMOjLeH';
-const PROVERBS_CACHE_KEY = 'daily-sayings:supabaseProverbs:v3';
+const PROVERBS_CACHE_KEY = 'daily-sayings:supabaseProverbs:v8';
 
 const languageColumns = {
   en: 'en',
@@ -34,13 +35,22 @@ function rowDescription(row, language) {
   return row?.[`description_${languageColumns[language] || language}`] || '';
 }
 
+function rowStory(row, language) {
+  return row?.[`story_${languageColumns[language] || language}`] || '';
+}
+
+function longestStory(...stories) {
+  return stories.filter(Boolean).reduce((longest, story) => story.length > longest.length ? story : longest, '');
+}
+
 function rowToVariants(row, fallbackProverb = null) {
   return Object.fromEntries(languages.map(({ key: language }) => {
     const fallback = fallbackProverb ? getProverbVariant(fallbackProverb, language) : null;
     const englishFallback = fallbackProverb ? getProverbVariant(fallbackProverb, 'en') : null;
-    const saying = rowQuote(row, language) || fallback?.saying || rowQuote(row, 'en') || '';
-    const explanation = rowDescription(row, language) || fallback?.explanation || rowDescription(row, 'en') || '';
-    const origin = fallback?.origin || englishFallback?.origin || '';
+    const correction = language === 'en' ? englishCorrectionsById[row?.id] : null;
+    const saying = correction?.saying || rowQuote(row, language) || fallback?.saying || rowQuote(row, 'en') || '';
+    const explanation = correction?.explanation || rowDescription(row, language) || fallback?.explanation || rowDescription(row, 'en') || '';
+    const origin = longestStory(rowStory(row, language), fallback?.origin, rowStory(row, 'en'), englishFallback?.origin);
     return [language, {
       ...(fallback || {}),
       saying,
@@ -75,6 +85,7 @@ function mergeRowsWithLocalProverbs(rows, baseProverbs = localProverbs) {
     return {
       ...proverb,
       category: row.category || proverb.category,
+      categoryIntroEn: row.category_intro_en || proverb.categoryIntroEn || '',
       variants,
       remoteIdsByLanguage,
       favoriteCountsByLanguage,
@@ -88,6 +99,7 @@ function mergeRowsWithLocalProverbs(rows, baseProverbs = localProverbs) {
     .map((row) => ({
       id: row.id,
       category: row.category || 'life',
+      categoryIntroEn: row.category_intro_en || '',
       kind: row.image_url ? 'image' : 'dilemma',
       oppositeId: null,
       remoteIdsByLanguage: Object.fromEntries(languages.map(({ key }) => [key, row.id])),
